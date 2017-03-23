@@ -130,25 +130,22 @@ In addition to previous mentioned features, we also use common NLP features like
 
 \subsection{Reason similarity}
 
-Word alignment has been proven to be a powerful method to measure semantic similarity between two sentences\cite{sultan2015dls}. We are going to use a similar technique to measure similarity between two text segements identified as reasons.
 
 \subsection{Growing Classifier}
-
-We can easily add the computed reason scores into the feature set of \cite{habernal2016argument} and use the same classifier, Support Vector Machine to combine reason level feature with lexicon features. 
-
 
 
 
 \section{Evaluation}
 \label{sec:evaluation}
 
-With the pairwise dataset, we can first evaluate our method in pair to see the precision. Also, we can further evaluate the convincingness order among given arguments by how many human labeled pair evaluations can match the algorithm produced order. 
 
 \subsection{Dataset}
 
-The ground truth for convincingness we choose is from \cite{habernal2016argument}. The dataset contains 16,081 argument paris from 32 different topics. 
-
 To train our argument component classifier, we are going to use the data from \cite{hasan2014you} which contains 4 different topics with labeled reasons. However, the only overlapping topic between two datasets is gay marriage. So we will try to train a close-domain model on gay marriage topic and a open-domain model. 
+
+
+
+\subsection{Cross-domain reason mining}
 
 \begin{table}[h]
 \begin{center}
@@ -186,7 +183,6 @@ To train our argument component classifier, we are going to use the data from \c
 \caption{\label{tab:gc} Performance of growing classifier. Assume we know other reasons in the same topic when calculating similarity-based feature. Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}.}
 \end{table}
 
-\subsection{Cross-domain reason mining}
 
 \begin{table*}[h]
 \begin{center}
@@ -271,25 +267,6 @@ To train our argument component classifier, we are going to use the data from \c
 \end{table*}
 
 
-\subsection{Expanding only}
-
-\begin{table}[h]
-\begin{center}
-\begin{tabular}{|c||c|c|}
-\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
-0.50 & 0.6121 & 0.8890 \\
-0.55 & 0.6845 & 0.2294 \\
-0.60 & 0.6829 & 0.1184 \\
-0.65 & 0.7188 & 0.0729 \\
-0.70 & 0.7288 & 0.0455 \\
-0.75 & 0.7200 & 0.0190 \\
-0.80 & 0.5556 & 0.0053 \\ 
-\hline
-\end{tabular}
-\end{center}
-\caption{\label{tab:expanding} Performance of our iterative method with expanding only in the second step. Trained on {\it abortion}, {\it obama}, {\it gayRights}. Tested on {\it marijuana}.}
-\end{table}
-
 \subsection{Same-domain reason mining}
 
 \begin{table*}[h]
@@ -312,6 +289,26 @@ To train our argument component classifier, we are going to use the data from \c
 \end{center}
 \caption{\label{tab:same-topic} Performance of our iterative approach with close-domain experiment setting. Trained on {\it gayRights}. Tested on {\it gayRights}. (Bold values are better.)}
 \end{table*}
+
+\subsection{Expanding only}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
+0.50 & 0.6121 & 0.8890 \\
+0.55 & 0.6845 & 0.2294 \\
+0.60 & 0.6829 & 0.1184 \\
+0.65 & 0.7188 & 0.0729 \\
+0.70 & 0.7288 & 0.0455 \\
+0.75 & 0.7200 & 0.0190 \\
+0.80 & 0.5556 & 0.0053 \\ 
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:expanding} Performance of our iterative method with expanding only in the second step. Trained on {\it abortion}, {\it obama}, {\it gayRights}. Tested on {\it marijuana}.}
+\end{table}
+
 
 \section{Discussion}
 \label{sec:discussion}
