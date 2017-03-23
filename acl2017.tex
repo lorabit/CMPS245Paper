@@ -28,7 +28,7 @@
 
 \newcommand\BibTeX{B{\sc ib}\TeX}
 
-\title{An Iterative Approach for Mining Reasons from Online Arguments}
+\title{An Iterative Approach for Mining Reasons from Web Arguments}
 
 \author{Yanan Xie \\
 Computer Science Department\\
@@ -44,7 +44,7 @@ University of California, Santa Cruz\\
 \begin{document}
 \maketitle
 \begin{abstract}
-Recently, researchers started to study the problem of predicting convincingness of web arguments. However, existing works all stop by taking advantage of superficial features without considering context and domain knowledge. Thus, those arguments containing weak supporting reasons but composed with convincing words may be automatically classified as highly convincing in existing models. We propose a new method which employs reason level feature to further improve the performance of predicting convincingness of web arguments.
+There is an increasing research interest on mining reasons from Web arguments, since many research problems derived from argument mining can benefit from structured information about reasons in the Web arguments. However, being a very hard problem, mining reasons from Web arguments is still an unsolved problem. In this paper, we present a supervised approach for mining reasons from Web arguments and an iterative approach based on the previous approach. Our experiments show that our iterative approach improves the results gained by the previous approach in some cases.
 \end{abstract}
 
 \section{Introduction}
@@ -66,10 +66,8 @@ YES, because some children don’t understand anything excect physical education
 \label{table:argumentexamples}
 \end{table}
 
+In order to analyze reasons in some Web arguments, the first step is to identify reasons from the given arguments. Fig. \ref{figure:reasonidentification} shows an example of reason identification. Unlike reason classification which aims on classifying reasons into some pre-labeled groups\cite{hasan2014you}, reason identification is to decide wether given argument segment is expressing a reason or not without manually-labeled knowledge about reasons. The task of reason identification is much harder than reason classification. To the best of our knowledge, there is no reported result on general reason identification for Web arguments.
 
-In order to rank reasons mentioned in arguments, we propose two hypotheses (A) arguments with good reasons are more convincing than those without, and (B) people tend to use more convincing reasons to compose an argument. To verify those hypotheses, we propose a new method which employs reason level feature to further improve the performance of predicting convincingness of web arguments.
-
-The method takes 4 steps. The first step is to identify text segments corresponding to reasons from arguments. Figure \ref{figure:reasonidentification} shows an exmaple of reason identification. Then we use clustering algorithm to group those identified reasons as the second step. With the grouped reasons, we can build an undirected graph where vertices are the arguments. If two arguments share reasons in the same group, we add an edge between two corresponding vertices. We can run a PageRank-like algorithm to score reason strength for all arguments. The last step is to combine reason strength with superficial features with an supervised learning classifier to produce the final score for each argument.  
 
 \begin{figure}
 
@@ -80,16 +78,26 @@ The method takes 4 steps. The first step is to identify text segments correspond
 \label{figure:reasonidentification}
 \end{figure}
 
+In this paper, we propose a supervised approach for mining reasons from Web arguments. Experiments show that the achieved performance does not vary significantly from topics. The model trained on same topic and the model trained on different topics perform similarly. In addition to the previous method, we also propose an iterative approach based on the previous method. Experiments show that the iterative approach achieves better performance in terms of precision and recall in many cases. 
+
+
 
 \section{Related work}
 
 Predicting convincingness of web arguments as a new research task has recently been studied\cite{habernal2016argument}. High quality human annotated convincingness data of argument pair in multiple domains is also available for research\cite{habernal2016argument}. 
 
-The classification of argument components is to classify text segments in given arguments into two types - claim and premise(reason)\cite{stab2014argumentation}. This issue has been studied by \cite{rooney2012applying,feng2011classifying,palau2009argumentation}. 
+The classification of argument components is to classify text segments in given arguments into two types - claim and premise\cite{stab2014argumentation}. This issue has been studied by \cite{rooney2012applying,feng2011classifying,palau2009argumentation,mochales2011argumentation}. This is very similar to the task of mining reasons from Web arguments. However, the major differences between our work and those mentioned works are: 1) They were not built for Web arguments; 2) They are closed-domain or built for arguments from specific topics.
 
-Reason classification has recently been studied\cite{hasan2014you}. And human annotated data is available which can also be used for evaluating reason clustering.
+Unlike other kinds of arguments, Web arguments are usually noisy\cite{habernal2016argument}. There may be a lot of typos, informal words, characters in Web arguments. It is also hard to find a general pattern from Web arguments. All of above make mining reasons from Web arguments far more difficult comparing with from other kinds of arguments.
 
-\section{An Iterative Approach}
+Open-domain reason mining can be far more difficult than close-domain reason mining. Reasons in the same topic can usually be grouped into several groups\cite{hasan2014you}. Reasons in the same group often share some mutual words, use similar way to support a certain point. Modern classifier can greatly benefits from this kind of features. However, cross-domain(topic) reason mining does not have this fortune. Features used to train classifier have to be re-designed and re-selected. 
+
+Reason classification on Web arguments has recently been studied\cite{hasan2014you}. And human annotated data is available which can also be used for evaluating reason clustering. Although the task of reason classification and of reason identification are totally different, we can borrow the data from \cite{hasan2014you} to evaluate the performance of our approach. 
+
+Recently, there is an increasing research interest in evidence mining\cite{cartright2011evidence, rinott2015show, aharoni2014benchmark}. Most of them propose to detect CDEs(Context Dependent Evidences) from arguments. Besides the difference that they do not study Web arguments, one other difference from the task of reason mining is that they focus on factual reasons, a small part of types of reasons. However, for mining reasons from Web arguments, we need to be able to identify all kinds of reasons from given Web arguments.  
+
+\section{Our approahces}
+\label{sec:approach}
 
 Our proposed method identifies text segments expressing reasons from argument as the first step. An undirected graph based on similarities between reason pairs will be built for each topic. Then we use a PageRank-like algorithm to rank reasons from the generated graph while the final step is to combine reason scores with lexicon features from argument to produce the convincingness score for each argument.  
 
@@ -109,6 +117,7 @@ We can easily add the computed reason scores into the feature set of \cite{haber
 
 
 \section{Evaluation}
+\label{sec:evaluation}
 
 With the pairwise dataset, we can first evaluate our method in pair to see the precision. Also, we can further evaluate the convincingness order among given arguments by how many human labeled pair evaluations can match the algorithm produced order. 
 
@@ -123,6 +132,16 @@ To train our argument component classifier, we are going to use the data from \c
 \subsection{Same-domain reason mining}
 
 
+\section{Discussion}
+\label{sec:discussion}
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+
+\section*{Acknowledgments}
+
+We appreciate the help from Ruiming Wang for suggesting us to use SVM rather than SVR to build the classifier. 
 
 % include your own bib file like this:
 % \bibliographystyle{acl}
