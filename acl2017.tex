@@ -67,7 +67,7 @@ YES, because some children don’t understand anything excect physical education
 \label{table:argumentexamples}
 \end{table}
 
-In order to analyze reasons in some Web arguments, the first step is to identify reasons from the given arguments. Fig. \ref{figure:reasonidentification} shows an example of reason identification. Unlike reason classification which aims on classifying reasons into some pre-labeled groups\cite{hasan2014you}, reason identification is to decide wether given argument segment is expressing a reason or not without manually-labeled knowledge about reasons. The task of reason identification is much harder than reason classification. To the best of our knowledge, there is no reported result on general reason identification for Web arguments.
+In order to analyze reasons in some Web arguments, the first step is to identify reasons from the given arguments. Figure \ref{figure:reasonidentification} shows an example of reason identification. Unlike reason classification which aims on classifying reasons into some pre-labeled groups\cite{hasan2014you}, reason identification is to decide wether given argument segment is expressing a reason or not without manually-labeled knowledge about reasons. The task of reason identification is much harder than reason classification. To the best of our knowledge, there is no reported result on general reason identification for Web arguments.
 
 
 \begin{figure}
@@ -81,9 +81,12 @@ In order to analyze reasons in some Web arguments, the first step is to identify
 
 In this paper, we propose a supervised approach for mining reasons from Web arguments. Experiments show that the achieved performance does not vary significantly from topics. The model trained on same topic and the model trained on different topics perform similarly. In addition to the previous method, we also propose an iterative approach based on the previous method. Experiments show that the iterative approach achieves better performance in terms of precision and recall in many cases. 
 
+The rest of this paper is organized as follow: Section \ref{sec:related} will give a quick review of studies in related fields. We will describe our approaches in Section \ref{sec:approach} while experimental evaluations on the proposed approaches will be shown in Section \ref{sec:evaluation}. In Section \ref{sec:discussion}, we will discuss some other aspects of this problem that we do not address in this paper. As the last part of this paper, Section \ref{sec:conclusion} will conclude this paper.
+
 
 
 \section{Related work}
+\label{sec:related}
 
 Predicting convincingness of web arguments as a new research task has recently been studied\cite{habernal2016argument}. High quality human annotated convincingness data of argument pair in multiple domains is also available for research\cite{habernal2016argument}. 
 
@@ -110,7 +113,7 @@ We first introduce the feature set we use to build Initializing Classifier.
 
 {\bf average\_idf} We also use average IDF to represent how much information the candidate provides, as we believe that words in reasons are generally more informative.
 
-{\bf discourse\_marker} Discourse marker has been known as a strong indicator for reason mining\cite{stab2014argumentation}. However, it was reported that only 26\% of the reason text segments in the RST Discourse Treebank include discourse markers\cite{marcu2002unsupervised}. Discourse markers we use in this approach include {\it however}, {\it but}, {\it because}, {\it since}, {\it hence}, and {\it as}.
+{\bf discourse\_marker} Discourse marker has been known as a strong indicator for reason mining\cite{stab2014argumentation}. Discourse markers we use in this approach include {\it however}, {\it but}, {\it because}, {\it since}, {\it hence}, and {\it as}.
 
 {\bf numeric\_token} It has been shown that some certain types of reasons tend to contain numeric analysis\cite{rinott2015show}. We use the number of numeric token in the tokenized candaidate to represent this kind of property.
 
@@ -125,63 +128,111 @@ We first introduce the feature set we use to build Initializing Classifier.
 In addition to previous mentioned features, we also use common NLP features like the position of the candidate in the context, the length of the candidate in terms of characters and tokens.
 
 
-
-
-
-\subsection{Reason similarity}
-
-
 \subsection{Growing Classifier}
 
+Since Web arguments are usually short and sometimes incomplete, many features mentioned above may not be identified in all reason text segments. For example, although being a strong indicator, discourse marker may not be presence before all reason text segments. It was reported that only 26\% of the reason text segments in the RST Discourse Treebank include discourse markers\cite{marcu2002unsupervised}. Further more, the same reason may be phrased in many ways. Words used in those different representations can be very different. Hence, features like {\bf total\_idf}, {\bf average\_idf} and {\bf lexicon\_token} do not always work. Hence, we may need to find another way to identify those hidden reason text segments. 
+
+It has been argued in the studies of reason classification that, with a few labels provided by topic experts, algorithms of reason classification can correctly identify and classify a big portion of those reason text segments\cite{hasan2014you}. In other words, many reason text segments share mutual meanings. 
+
+In order to utilize this kind of property to further improve the performance of reason mining, we propose an iterative approach based on previous method. We want to train a new classifier that exploits relations between candidates in the same topic. It`s intuitive to use similarity between candidate to express this kind of relation, as in the task of reason classification, similarity between candidate and label has been used as the main feature to detect and identify reasons\cite{hasan2014you}. 
+
+We can simply add a new feature which is computed by the maximum semantic similarity between measured candidate and identified reasons. However, as measured candidates are unknown in the first place. Problems raised by this approach are 1) How do we obtain the added feature during predicting? 2) How do we train this classifier?
+
+To be able to use the new classifier(which is called Growing Classifier) to detect reasons, we need to use our previous approach to initially identify a small portion of reasons. That`s why we call the previous approach Initializing Classifier. With the initial reason set identified by Initializing Classifier, we can use Growing Classifier to detect reasons iteratively, until no reasons can be added to or removed from the reason set.
+
+As for issue of training, we can assume that all reasons except the current one are known. We use the maximum similarity between current candidate and all reason segments in the sampe topic except itself to represent the added similarity feature.
+
+The semantic similarity between candidates is calculated by cosine similarity between semantic vectors of two text segments. The method has been long employed as a effective method to easure similarity\cite{steinbach2000comparison}. We use average embedding vectors of words in the text segment to represent the semantic vector of text segment. The word embedding model we used in this paper is word2vec\cite{mikolov2013efficient}. Although there are many more advanced methods for measuring semantic similarity like word alignment\cite{sultan2015dls}, we choose embedding based method mainly due to its simplicity in implementing, as we do not want to address similarity computation in this paper.
+
+We have tried many popular classifier to train our model including logistic, SVR(Support Vector Regression) and SVM(Support Vector Machine). As a result, SVM-based model performs the best in our evaluation dataset. We use SVM from scikit-learn library to build both Initializing Classifier and Growing Classifier.
 
 
 \section{Evaluation}
 \label{sec:evaluation}
 
+In this section, we will start by introducing how we obtain the data we used to train and test our approaches. And then we will evaluate our two methods in both open-domain setting and single-domain setting. We will also show some other interesting properties of our methods. 
 
 \subsection{Dataset}
 
-To train our argument component classifier, we are going to use the data from \cite{hasan2014you} which contains 4 different topics with labeled reasons. However, the only overlapping topic between two datasets is gay marriage. So we will try to train a close-domain model on gay marriage topic and a open-domain model. 
+The dataset we use is from\cite{hasan2014you} which contains approximately 2,000 Web arguments from 4 different topics with labeled reasons. After looked into the dataset, we found some annotated reasons in the same Web argument can be overlapping. To similify the precedure of data preprocessing, we combine those overlapping text segments into one single text segment which is the union of all overlapping segments. 
 
-
-
-\subsection{Cross-domain reason mining}
+In order to use the data for the classifying problem, we need to separate origin Web arugments into two kinds of text segments, reason segments and non-reason segments. We simply extract annotated reasons as the reason segments and those left in the origin text and separated by reason segments are the non-reason segments. We removed all text segments containing less than 3 characters. As shown in Table \ref{tab:dataset}, the dataset we obtained from above preprocessing method is pretty balanced(52\% vs. 48\%).
 
 \begin{table}[h]
 \begin{center}
 \begin{tabular}{|c||c|c|}
-\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
-0.50& 0.5377    & 0.9173 \\
-0.55& 0.6590    & 0.4362 \\
-0.60& 0.6173    & 0.1532 \\
-0.65& 0.6405    & 0.1001 \\
-0.70& 0.5570    & 0.0449 \\
-0.75& 0.5500    & 0.0225 \\
-0.80& 0.5833    & 0.0072 \\
-0.85& 0.5000    & 0.0010 \\ 
+\hline \bf Topic & \bf Non-reason & \bf Reason\\ \hline\hline
+abortion  & 895  & 921  \\
+gayRights & 974  & 979  \\
+obama     & 630  & 734  \\
+marijuana & 754  & 946  \\
+Total     & 3253 & 3580 \\ 
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:dataset} An overview of our preprocessed dataset.}
+\end{table}
+
+\subsection{Expanding only}
+
+When we use Growing Classifier to further detect reasons with initial reason set, we do not only give the Growing Classifier the right to add candidates into reason set, we also give the classifier the flexibility to remove detected reasons from reason set. In Table \ref{tab:expanding}, we show the results obtained by Growing Classifier without the ability to remove reasons. By comparing the results with results from Table \ref{tab:cross-marijuana}, we can see that limiting the ability of Growing Classifier does not improve the performance in terms of precision and recall in many threshold settings. Hence, we will not limit the Growing Classifier on expanding only in following evaluations. 
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall & \bf F1 score \\ \hline\hline
+0.50 & 0.6121 & 0.8890 & 0.7250 \\
+0.55 & 0.6845 & 0.2294 & 0.3436 \\
+0.60 & 0.6829 & 0.1184 & 0.2018 \\
+0.65 & 0.7188 & 0.0729 & 0.1324 \\
+0.70 & 0.7288 & 0.0455 & 0.08565 \\
+0.75 & 0.7200 & 0.0190 & 0.0370 \\
+0.80 & 0.5556 & 0.0053 & 0.01050 \\ 
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:expanding} Performance of our iterative method with expanding only in the second step. Trained on {\it abortion}, {\it obama}, {\it gayRights}. Tested on {\it marijuana}.}
+\end{table*}
+
+\subsection{Cross-domain reason mining}
+
+As shown in Table. \ref{tab:ic}, our Initializing Classifier achieves F1-score 0.6779 with threshold to control recall being 0.50. The threshold is used to predict from the likelyhood given by SVM. We train the classifier on 3 topics, and test on another topic. The result of Growing Classifier obtained in the same setting is shown in Table. \ref{tab:gc}. As we can see two results are very similar. Note that the real performance of Growing Classifier should not be as high as shown in Table. \ref{tab:gc}, since the result of Table. \ref{tab:gc} is obtained with the assumption that we have all other reasons in reason set to calculate the maximum similarity feature. However, as shown in \ref{tab:cross-gay}, the actual result of our iterative approach superisely outperform Initializing Classifier and Growing Classifier(with perfect knowledge of reason set) in many threshold settings. The results tested on other dataset settings are very similar. We show our cross-domain reason mining results in Table. \ref{tab:cross-gay}, \ref{tab:cross-obama}, \ref{tab:cross-abortion}, and \ref{tab:cross-marijuana}.
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall &\bf F1 score \\ \hline\hline
+0.50& 0.5377    & 0.9173 & 0.6780 \\
+0.55& 0.6590    & 0.4362 & 0.5249 \\
+0.60& 0.6173    & 0.1532 & 0.2455 \\
+0.65& 0.6405    & 0.1001 & 0.1731 \\
+0.70& 0.5570    & 0.0449 & 0.08310 \\
+0.75& 0.5500    & 0.0225 & 0.04323 \\
+0.80& 0.5833    & 0.0072 & 0.01422 \\
+0.85& 0.5000    & 0.0010 & 0.0020 \\ 
 \hline
 \end{tabular}
 \end{center}
 \caption{\label{tab:ic} Performance of our baseline method (initializing classifier). Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}.}
-\end{table}
+\end{table*}
 
-\begin{table}[h]
+\begin{table*}[h]
 \begin{center}
-\begin{tabular}{|c||c|c|}
-\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
-0.50 & 0.5370 & 0.9122 \\
-0.55 & 0.6609 & 0.4321 \\
-0.60 & 0.6320 & 0.1736 \\
-0.65 & 0.6292 & 0.1144 \\
-0.70 & 0.5591 & 0.0531 \\
-0.75 & 0.5400 & 0.0276 \\
-0.80 & 0.6471 & 0.0112 \\
-0.85 & 0.6667 & 0.0020 \\
+\begin{tabular}{|c||c|c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall &\bf F1 score \\ \hline\hline
+0.50 & 0.5370 & 0.9122 & 0.6760\\
+0.55 & 0.6609 & 0.4321 & 0.5225 \\
+0.60 & 0.6320 & 0.1736 & 0.2724 \\
+0.65 & 0.6292 & 0.1144 & 0.1936 \\
+0.70 & 0.5591 & 0.0531 & 0.09699 \\
+0.75 & 0.5400 & 0.0276 & 0.05252 \\
+0.80 & 0.6471 & 0.0112 & 0.02202 \\
+0.85 & 0.6667 & 0.0020 & 0.003988 \\
 \hline
 \end{tabular}
 \end{center}
 \caption{\label{tab:gc} Performance of growing classifier. Assume we know other reasons in the same topic when calculating similarity-based feature. Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}.}
-\end{table}
+\end{table*}
 
 
 \begin{table*}[h]
@@ -269,6 +320,8 @@ To train our argument component classifier, we are going to use the data from \c
 
 \subsection{Same-domain reason mining}
 
+Since there are already a lot of work done in reason mining for some specfic domains like law\cite{palau2009argumentation}. We do not want to build another domain specific classifier. So we also evaluate our approaches in single-domain setting for some topic. Results shown in Table. \ref{tab:same-topic} show that our approahces do not bais close-domain tasks. 
+
 \begin{table*}[h]
 \begin{center}
 \begin{tabular}{|c||c|c|c|c|c|}
@@ -290,32 +343,22 @@ To train our argument component classifier, we are going to use the data from \c
 \caption{\label{tab:same-topic} Performance of our iterative approach with close-domain experiment setting. Trained on {\it gayRights}. Tested on {\it gayRights}. (Bold values are better.)}
 \end{table*}
 
-\subsection{Expanding only}
 
-\begin{table}[h]
-\begin{center}
-\begin{tabular}{|c||c|c|}
-\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
-0.50 & 0.6121 & 0.8890 \\
-0.55 & 0.6845 & 0.2294 \\
-0.60 & 0.6829 & 0.1184 \\
-0.65 & 0.7188 & 0.0729 \\
-0.70 & 0.7288 & 0.0455 \\
-0.75 & 0.7200 & 0.0190 \\
-0.80 & 0.5556 & 0.0053 \\ 
-\hline
-\end{tabular}
-\end{center}
-\caption{\label{tab:expanding} Performance of our iterative method with expanding only in the second step. Trained on {\it abortion}, {\it obama}, {\it gayRights}. Tested on {\it marijuana}.}
-\end{table}
 
 
 \section{Discussion}
 \label{sec:discussion}
 
+Recently, RNN(Recurrent Nerual Network)-based models have benn proved success in many NLP tasks\cite{mikolov2010recurrent,luong2015effective}. RNN-based methods benefit from end-to-end traninig and the ability to catch the sequencetive information of natural language. We believe there must be some RNN-based methods that can achive better results than ours. 
+
+Another issue of this paper is that the dataset we use is not big enough for fully demostrating the improvements made by the proposed approach. We are expecting the precence of other larger datasets for evaluating reason mining approaches.
+
+Text segmentation is not addressed in this paper, as there are many papers on exploting sentence completness to split text for evidence mining that we can directly borrow from\ref{rinott2015show}.
+
 \section{Conclusion}
 \label{sec:conclusion}
 
+As a foundemental problem to many argumentation mining tasks, open-domain reason mining is indeed a hard problem. In this paper, we build two classifiers to attack the problem of reason mining. Our first approach achieves a F1-score of 0.6779 while the second approach improves the performance based on the previous method in most threshold settings. Future work on this topic may require a better dataset.
 
 \section*{Acknowledgments}
 
