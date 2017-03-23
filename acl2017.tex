@@ -14,6 +14,7 @@
 \usepackage[hyperref]{acl2017}
 \usepackage{times}
 \usepackage{latexsym}
+\usepackage{multirow}
 
 \usepackage{url}
 
@@ -99,11 +100,33 @@ Recently, there is an increasing research interest in evidence mining\cite{cartr
 \section{Our approahces}
 \label{sec:approach}
 
-Our proposed method identifies text segments expressing reasons from argument as the first step. An undirected graph based on similarities between reason pairs will be built for each topic. Then we use a PageRank-like algorithm to rank reasons from the generated graph while the final step is to combine reason scores with lexicon features from argument to produce the convincingness score for each argument.  
+In this section, we will introduce a supervised approach(the baseline method) for mining reasons from Web arguments. After we introduce an algorithm for measuring semantic similarity between two text segments from Web arguments, we will present an iterative approach based on the previous approach that utilizes the similarities between candidates. 
 
 \subsection{Initializing Classifier}
 
-Reason identification usually take advantage of discourse markers\cite{palau2009argumentation}. However, it has been reported that only few of reasons include discourse markers\cite{marcu2002unsupervised}. Given enough arguments in a topic, we can use a model based on discourse markers to select a small part of reasons, and then use reason classification techniques to identify reasons that include no discourse markers.
+We first introduce the feature set we use to build Initializing Classifier.
+
+{\bf total\_idf} IDF(Inverse Document Frequency) is a measure of how much information a word provides\cite{salton1986introduction}. As we argue that reasons usually carry more information than other components do. So we sum IDFs of all words appearing in the candidate up to represent how much information the candidate provides.  
+
+{\bf average\_idf} We also use average IDF to represent how much information the candidate provides, as we believe that words in reasons are generally more informative.
+
+{\bf discourse\_marker} Discourse marker has been known as a strong indicator for reason mining\cite{stab2014argumentation}. However, it was reported that only 26\% of the reason text segments in the RST Discourse Treebank include discourse markers\cite{marcu2002unsupervised}. Discourse markers we use in this approach include {\it however}, {\it but}, {\it because}, {\it since}, {\it hence}, and {\it as}.
+
+{\bf numeric\_token} It has been shown that some certain types of reasons tend to contain numeric analysis\cite{rinott2015show}. We use the number of numeric token in the tokenized candaidate to represent this kind of property.
+
+{\bf contains\_quote} Factual reason usually use some certain symbols including {\it :}, {\it ''} , {\it -},{\it (}, and, {\it )}\cite{rinott2015show}.  We use a binay feature to represent wether the current candidate contains a symbol in our symbol set.
+
+{\bf num\_quote} We also use the number of symbols in the candidate that also appears in our symbol set as a feature to complement the previous feature.
+
+{\bf lexicon\_token} As we read some Web arguments from other dataset, we found that some certain words are frequently used to express reasons. We use the number of those tokens that appear in tokenized text segment as a feature. In order to compress the word set, we use a stemmed word set instead. The stemmed word set contains {\it studi}, {\it show}, {\it research}, {\it indic}, {\it report}, {\it scientist}, {\it know}, {\it result}, {\it evid}, {\it instanc}, {\it exampl},  {\it case},  {\it when},  {\it whi},  {\it where}, and {\it what}.
+
+{\bf marker\_token} As we noticed that in our dataset, some text segment may express multiple reasons. Some of those reasons are also separated by discourse markers. We use the same discourse marker set in {\bf discourse\_marker} to test if the candidate contains discourse marker.
+
+In addition to previous mentioned features, we also use common NLP features like the position of the candidate in the context, the length of the candidate in terms of characters and tokens.
+
+
+
+
 
 \subsection{Reason similarity}
 
@@ -127,10 +150,168 @@ The ground truth for convincingness we choose is from \cite{habernal2016argument
 
 To train our argument component classifier, we are going to use the data from \cite{hasan2014you} which contains 4 different topics with labeled reasons. However, the only overlapping topic between two datasets is gay marriage. So we will try to train a close-domain model on gay marriage topic and a open-domain model. 
 
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
+0.50& 0.5377    & 0.9173 \\
+0.55& 0.6590    & 0.4362 \\
+0.60& 0.6173    & 0.1532 \\
+0.65& 0.6405    & 0.1001 \\
+0.70& 0.5570    & 0.0449 \\
+0.75& 0.5500    & 0.0225 \\
+0.80& 0.5833    & 0.0072 \\
+0.85& 0.5000    & 0.0010 \\ 
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:ic} Performance of our baseline method (initializing classifier). Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}.}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
+0.50 & 0.5370 & 0.9122 \\
+0.55 & 0.6609 & 0.4321 \\
+0.60 & 0.6320 & 0.1736 \\
+0.65 & 0.6292 & 0.1144 \\
+0.70 & 0.5591 & 0.0531 \\
+0.75 & 0.5400 & 0.0276 \\
+0.80 & 0.6471 & 0.0112 \\
+0.85 & 0.6667 & 0.0020 \\
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:gc} Performance of growing classifier. Assume we know other reasons in the same topic when calculating similarity-based feature. Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}.}
+\end{table}
+
 \subsection{Cross-domain reason mining}
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\bf Threshold}} & \multicolumn{2}{c|}{\bf Baseline}  & \multicolumn{3}{c|}{\bf Our Method}    \\ \cline{2-6} 
+\multicolumn{1}{|c|}{}   & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{l|}{\bf Recall} & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{c|}{\bf Recall} & \multicolumn{1}{l|}{\bf Iterations} \\ \hline
+ \hline
+0.50     & \bf 0.5377& \bf0.9173   & 0.5370 & 0.9122    & 2 \\
+0.55     & 0.6590& \bf0.4362   &\bf 0.6609 & 0.4321    & 2 \\
+0.60     & 0.6173& 0.1532   &\bf 0.6320 &\bf 0.1736    & 2 \\
+0.65     &\bf 0.6405& 0.1001   & 0.6292 & \bf0.1144    & 2 \\
+0.70     & 0.5570& 0.0449   &\bf 0.5591 &\bf 0.0531    & 2 \\
+0.75     &\bf 0.5500& 0.0225   & 0.5306 &\bf 0.0266    & 2 \\
+0.80     & 0.5833& 0.0072   &\bf 0.6250 &\bf 0.0102    & 2 \\
+0.85     & 0.5000& 0.0010   &\bf 0.6667 &\bf 0.0020    & 2
+\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:cross-gay} Performance of our iterative approach with open-domain experiment setting. Trained on {\it abortion}, {\it obama}, {\it marijuana}. Tested on {\it gayRights}. (Bold values are better.)}
+\end{table*}
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\bf Threshold}} & \multicolumn{2}{c|}{\bf Baseline}  & \multicolumn{3}{c|}{\bf Our Method}    \\ \cline{2-6} 
+\multicolumn{1}{|c|}{}   & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{l|}{\bf Recall} & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{c|}{\bf Recall} & \multicolumn{1}{l|}{\bf Iterations} \\ \hline
+ \hline
+0.50 &\bf 0.5741 &\bf 0.8338 & 0.5737 & 0.8270 & 2 \\
+0.55 &\bf 0.7357 & 0.2275 & 0.7287 &\bf 0.2561 & 2 \\
+0.60 & 0.7130 & 0.1117 &\bf 0.7313 &\bf 0.1335 & 2 \\
+0.65 &\bf 0.6944 & 0.0681 & 0.6875 &\bf 0.0749 & 2 \\
+0.70 & 0.6444 & 0.0395 &\bf 0.6604 &\bf 0.0477 & 2 \\
+0.75 & 0.5417 & 0.0177 &\bf 0.5882 &\bf 0.0272 & 2 \\
+0.80 &\bf 0.7273 & 0.0109 & 0.6429 &\bf 0.0123 & 2
+\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:cross-obama} Performance of our iterative approach with open-domain experiment setting. Trained on {\it abortion}, {\it gayRights}, {\it marijuana}. Tested on {\it obama}. (Bold values are better.)}
+\end{table*}
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\bf Threshold}} & \multicolumn{2}{c|}{\bf Baseline}  & \multicolumn{3}{c|}{\bf Our Method}    \\ \cline{2-6} 
+\multicolumn{1}{|c|}{}   & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{l|}{\bf Recall} & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{c|}{\bf Recall} & \multicolumn{1}{l|}{\bf Iterations} \\ \hline
+ \hline
+0.50 &\bf 0.5341 &\bf 0.9001 & 0.5336 & 0.8969 & 2 \\
+0.55 & 0.5402 &\bf 0.8382 &\bf 0.5418 & 0.8371 & 2 \\
+0.60 & 0.6104 & 0.1650 &\bf 0.6330 &\bf 0.1835 & 2 \\
+0.65 &\bf 0.5758 & 0.0825 & 0.5621 &\bf 0.0934 & 2 \\
+0.70 & 0.5775 & 0.0445 &\bf 0.5789 &\bf 0.0478 & 2 \\
+0.75 &\bf 0.6364 & 0.0228 & 0.6341 &\bf 0.0282 & 2 \\
+0.80 & 0.6667 & 0.0065 &\bf 0.7143 &\bf 0.0109 & 2 \\
+0.85 & 0.6667 & 0.0022 & 0.6667 & 0.0022 & 1
+\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:cross-abortion} Performance of our iterative approach with open-domain experiment setting. Trained on {\it obama}, {\it gayRights}, {\it marijuana}. Tested on {\it abortion}. (Bold values are better.)}
+\end{table*}
+
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\bf Threshold}} & \multicolumn{2}{c|}{\bf Baseline}  & \multicolumn{3}{c|}{\bf Our Method}    \\ \cline{2-6} 
+\multicolumn{1}{|c|}{}   & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{l|}{\bf Recall} & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{c|}{\bf Recall} & \multicolumn{1}{l|}{\bf Iterations} \\ \hline
+ \hline
+0.50 & 0.6095 &\bf 0.8911 &\bf 0.6124 & 0.8869 & 2 \\
+0.55 & 0.6823 & 0.2156 &\bf 0.6900 &\bf 0.2400 & 2 \\
+0.60 &\bf 0.6687 & 0.1131 & 0.6667 &\bf 0.1205 & 2 \\
+0.65 & 0.7126 & 0.0655 &\bf 0.7404 &\bf 0.0814 & 2 \\
+0.70 & 0.7069 & 0.0433 &\bf 0.7164 &\bf 0.0507 & 2 \\
+0.75 & 0.6957 & 0.0169 &\bf 0.7879 &\bf 0.0275 & 2 \\
+0.80 & 0.6000 & 0.0063 &\bf 0.6923 &\bf 0.0095 & 2
+\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:cross-marijuana} Performance of our iterative approach with open-domain experiment setting. Trained on {\it obama}, {\it gayRights}, {\it abortion}. Tested on {\it marijuana}. (Bold values are better.)}
+\end{table*}
+
+
+\subsection{Expanding only}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|}
+\hline \bf Threshold & \bf Precision & \bf Recall \\ \hline\hline
+0.50 & 0.6121 & 0.8890 \\
+0.55 & 0.6845 & 0.2294 \\
+0.60 & 0.6829 & 0.1184 \\
+0.65 & 0.7188 & 0.0729 \\
+0.70 & 0.7288 & 0.0455 \\
+0.75 & 0.7200 & 0.0190 \\
+0.80 & 0.5556 & 0.0053 \\ 
+\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:expanding} Performance of our iterative method with expanding only in the second step. Trained on {\it abortion}, {\it obama}, {\it gayRights}. Tested on {\it marijuana}.}
+\end{table}
 
 \subsection{Same-domain reason mining}
 
+\begin{table*}[h]
+\begin{center}
+\begin{tabular}{|c||c|c|c|c|c|}
+\hline
+\multicolumn{1}{|c|}{\multirow{2}{*}{\bf Threshold}} & \multicolumn{2}{c|}{\bf Baseline}  & \multicolumn{3}{c|}{\bf Our Method}    \\ \cline{2-6} 
+\multicolumn{1}{|c|}{}   & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{l|}{\bf Recall} & \multicolumn{1}{l|}{\bf Precision} & \multicolumn{1}{c|}{\bf Recall} & \multicolumn{1}{l|}{\bf Iterations} \\ \hline
+ \hline
+0.50 & 0.5169 & 0.9079 & 0.5172 & 0.8904 & 2 \\
+0.55 & 0.5209 & 0.8202 & 0.6691 & 0.2039 & 2 \\
+0.60 & 0.6167 & 0.0811 & 0.6207 & 0.0789 & 2 \\
+0.65 & 0.5882 & 0.0439 & 0.6216 & 0.0504 & 2 \\
+0.70 & 0.5652 & 0.0285 & 0.5833 & 0.0307 & 2 \\
+0.75 & 0.6000 & 0.0197 & 0.6111 & 0.0241 & 2 \\
+0.80 & 0.6364 & 0.0154 & 0.6364 & 0.0154 & 1 \\
+0.85 & 0.7500 & 0.0132 & 0.7500 & 0.0132 & 1
+\\\hline
+\end{tabular}
+\end{center}
+\caption{\label{tab:same-topic} Performance of our iterative approach with close-domain experiment setting. Trained on {\it gayRights}. Tested on {\it gayRights}. (Bold values are better.)}
+\end{table*}
 
 \section{Discussion}
 \label{sec:discussion}
